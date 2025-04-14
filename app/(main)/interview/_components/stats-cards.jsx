@@ -1,74 +1,69 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Brain, Target, Trophy } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const StatsCards = ({ assessments }) => {
-
-  const calculateAverageScore = async () => {
+export default function StatsCards({ assessments }) {
+  const getAverageScore = () => {
     if (!assessments?.length) return 0;
-    const score = assessments.reduce(
+    const total = assessments.reduce(
       (sum, assessment) => sum + assessment.quizScore,
       0
     );
-    return (score / assessments.length).toFixed(1);
+    return (total / assessments.length).toFixed(1);
   };
 
-  const totalQuestions = () => {
-    if(!assessments.length) {
-      return 0;
-    }
-    const totalquestion = assessments.reduce(
+  const getLatestAssessment = () => {
+    if (!assessments?.length) return null;
+    return assessments[0];
+  };
+
+  const getTotalQuestions = () => {
+    if (!assessments?.length) return 0;
+    return assessments.reduce(
       (sum, assessment) => sum + assessment.questions.length,
       0
     );
-    return totalquestion;
-  }
-
-  const latestScore = () => {
-    if(!assessments.length) return null;
-   return assessments[0];
-  }
-
+  };
 
   return (
-    <div className="grid gap-5 md:grid-cols-3">
-      <Card className="bg-transparent hover:border-primary">
+    <div className="grid gap-4 md:grid-cols-3">
+      <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Average Score</CardTitle>
           <Trophy className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <h2 className="font-bold text-2xl">{calculateAverageScore()}</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-            Across All Assessments
+          <div className="text-2xl font-bold">{getAverageScore()}%</div>
+          <p className="text-xs text-muted-foreground">
+            Across all assessments
           </p>
         </CardContent>
       </Card>
-      <Card className="bg-transparent hover:border-primary">
+
+      <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Questions Practised</CardTitle>
+          <CardTitle className="text-sm font-medium">
+            Questions Practiced
+          </CardTitle>
           <Brain className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <h2 className="font-bold text-2xl">{totalQuestions()}</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-           Total questions
-          </p>
+          <div className="text-2xl font-bold">{getTotalQuestions()}</div>
+          <p className="text-xs text-muted-foreground">Total questions</p>
         </CardContent>
       </Card>
-      <Card className="bg-transparent hover:border-primary">
+
+      <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Latest Score</CardTitle>
           <Target className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <h2 className="font-bold text-2xl">{latestScore()?.quizScore.toFixed(1) || 0}</h2>
-          <p className="text-sm text-muted-foreground mt-1">
-          Most recent quiz
-          </p>
+          <div className="text-2xl font-bold">
+            {getLatestAssessment()?.quizScore.toFixed(1) || 0}%
+          </div>
+          <p className="text-xs text-muted-foreground">Most recent quiz</p>
         </CardContent>
       </Card>
     </div>
   );
-};
-
-export default StatsCards;
+}

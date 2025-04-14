@@ -1,11 +1,11 @@
 
-import { getAssessment } from "@/actions/interview";
+import { getAssessments } from "@/actions/interview";
 import StatsCards from "./_components/stats-cards";
 import PerformanceStats from "./_components/PerformanceStats";
 import Quizdata from "./_components/Quizdata";
 
 const page = async () => {
-   const assessments = await getAssessment();
+   const assessments = await getAssessments();
   return (
     <div className="md:mx-4">
     <div className="flex items-center justify-between mb-5">

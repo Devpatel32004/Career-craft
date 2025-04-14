@@ -1,12 +1,14 @@
+"use server";
+
 import { db } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const ai = new GoogleGenerativeAI(process.env.GEMINAI_API_KEY);
-const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
+const genAI = new GoogleGenerativeAI(process.env.GEMINAI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-export async function generateAiInsights(industry) {
-  const promt = `
+export const generateAIInsights = async (industry) => {
+  const prompt = `
           Analyze the current state of the ${industry} industry and provide insights in ONLY the following JSON format without any additional notes or explanations:
           {
             "salaryRanges": [
@@ -26,14 +28,13 @@ export async function generateAiInsights(industry) {
           Include at least 5 skills and trends.
         `;
 
-  const result = await model.generateContent(promt);
-  const rawText = result.response.text();
-  const cleanedText = rawText.replace(/```(?:json)?\n?|```/g, "").trim();
-
-  console.log("cleaned text is : ", cleanedText);
+  const result = await model.generateContent(prompt);
+  const response = result.response;
+  const text = response.text();
+  const cleanedText = text.replace(/```(?:json)?\n?/g, "").trim();
 
   return JSON.parse(cleanedText);
-}
+};
 
 export async function getIndustryInsights() {
   const { userId } = await auth();
@@ -41,13 +42,16 @@ export async function getIndustryInsights() {
 
   const user = await db.user.findUnique({
     where: { clerkUserId: userId },
-    include: {industryInsight: true}
+    include: {
+      industryInsight: true,
+    },
   });
 
-  if (!user) throw new Error("User Not Found!");
+  if (!user) throw new Error("User not found");
 
+  // If no insights exist, generate them
   if (!user.industryInsight) {
-    const insights = await generateAiInsights(user.industry);
+    const insights = await generateAIInsights(user.industry);
 
     const industryInsight = await db.industryInsight.create({
       data: {
@@ -60,5 +64,5 @@ export async function getIndustryInsights() {
     return industryInsight;
   }
 
-  return user.industryInsight
+  return user.industryInsight;
 }

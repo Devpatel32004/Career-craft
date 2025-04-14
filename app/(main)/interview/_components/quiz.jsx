@@ -1,8 +1,8 @@
 "use client";
 
-import useFetch from "@/hooks/use-fetch";
-import React, { useEffect, useState } from "react";
-
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -10,17 +10,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
-import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-
-import { BarLoader } from "react-spinners";
+import { Label } from "@/components/ui/label";
 import { generateQuiz, saveQuizResult } from "@/actions/interview";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
 import QuizResult from "./quiz-result";
+import useFetch from "@/hooks/use-fetch";
+import { BarLoader } from "react-spinners";
 
-const Quiz = () => {
+export default function Quiz() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState([]);
   const [showExplanation, setShowExplanation] = useState(false);
@@ -38,8 +35,6 @@ const Quiz = () => {
     setData: setResultData,
   } = useFetch(saveQuizResult);
 
-  console.log(resultData);
-
   useEffect(() => {
     if (quizData) {
       setAnswers(new Array(quizData.length).fill(null));
@@ -52,8 +47,16 @@ const Quiz = () => {
     setAnswers(newAnswers);
   };
 
+  const handleNext = () => {
+    if (currentQuestion < quizData.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+      setShowExplanation(false);
+    } else {
+      finishQuiz();
+    }
+  };
+
   const calculateScore = () => {
-    if (!quizData) return 0;
     let correct = 0;
     answers.forEach((answer, index) => {
       if (answer === quizData[index].correctAnswer) {
@@ -65,43 +68,27 @@ const Quiz = () => {
 
   const finishQuiz = async () => {
     const score = calculateScore();
-    if (!quizData) {
-      toast.error("Quiz data is not available.");
-      return;
-    }
     try {
       await saveQuizResultFn(quizData, answers, score);
       toast.success("Quiz completed!");
     } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message || "Failed to save quiz results");
-      } else {
-        toast.error("Failed to save quiz results");
-      }
+      toast.error(error.message || "Failed to save quiz results");
     }
   };
 
-  const handleNext = () => {
-    if (!quizData) return;
-    if (currentQuestion < quizData.length - 1) {
-      setCurrentQuestion((prev) => prev + 1);
-      setShowExplanation(false);
-    } else {
-      finishQuiz();
-    }
-  };
   const startNewQuiz = () => {
     setCurrentQuestion(0);
     setAnswers([]);
-    setResultData(null);
     setShowExplanation(false);
     generateQuizFn();
+    setResultData(null);
   };
 
   if (generatingQuiz) {
     return <BarLoader className="mt-4" width={"100%"} color="gray" />;
   }
 
+  // Show results if quiz is completed
   if (resultData) {
     return (
       <div className="mx-2">
@@ -114,9 +101,7 @@ const Quiz = () => {
     return (
       <Card className="mx-2">
         <CardHeader>
-          <CardTitle className="leading-6">
-            Ready to test your knowledge?
-          </CardTitle>
+          <CardTitle>Ready to test your knowledge?</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground">
@@ -125,14 +110,7 @@ const Quiz = () => {
           </p>
         </CardContent>
         <CardFooter>
-          <Button
-            size="lg"
-            className="w-full hover:cursor-pointer"
-            onClick={generateQuizFn}
-          >
-            {savingResult && (
-              <BarLoader className="mt-4" width={"100%"} color="gray" />
-            )}
+          <Button onClick={generateQuizFn} className="w-full">
             Start Quiz
           </Button>
         </CardFooter>
@@ -143,76 +121,57 @@ const Quiz = () => {
   const question = quizData[currentQuestion];
 
   return (
-    <Card className="mx-2 bg-transparent">
-    <CardHeader>
-      <CardTitle>
-        Question {currentQuestion + 1} of {quizData.length}
-      </CardTitle>
-    </CardHeader>
-    
-    <CardContent className="space-y-4 px-4 sm:px-6">
-      <p className="text-lg sm:text-xl font-medium mb-7">{question.question}</p>
-      
-      <RadioGroup
-        onValueChange={handleAnswer}
-        value={answers[currentQuestion] || undefined}
-        className="space-y-2" // Increased spacing between options
-      >
-        {question.options.map((option, index) => (
-          <div 
-            key={index} 
-            className="flex items-center space-x-4 p-2 hover:bg-muted/50 rounded-lg transition-colors" // Added padding and hover effect
-          >
-            <RadioGroupItem 
-              value={option} 
-              id={`option-${index}`} 
-              className="h-5 w-5" 
-            />
-            <Label 
-              htmlFor={`option-${index}`} 
-              className="text-base sm:text-md cursor-pointer flex-1"
-            >
-              {option}
-            </Label>
-          </div>
-        ))}
-      </RadioGroup>
-  
-      {showExplanation && (
-        <div className="mt-6 p-4 bg-muted rounded-lg">
-          <p className="font-medium text-lg">Explanation:</p>
-          <p className="text-muted-foreground mt-2">{question.explanation}</p>
-        </div>
-      )}
-    </CardContent>
-    
-    <CardFooter className="flex flex-col sm:flex-row justify-between gap-3 px-4 sm:px-6 py-4">
-      {!showExplanation && (
-        <Button
-          onClick={() => setShowExplanation(true)}
-          variant="outline"
-          disabled={!answers[currentQuestion]}
-          className="w-full sm:w-fit text-sm sm:text-base py-3 px-4 sm:px-6" // Full width on mobile
+    <Card className="mx-2">
+      <CardHeader>
+        <CardTitle>
+          Question {currentQuestion + 1} of {quizData.length}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <p className="text-lg font-medium">{question.question}</p>
+        <RadioGroup
+          onValueChange={handleAnswer}
+          value={answers[currentQuestion]}
+          className="space-y-2"
         >
-          Show Explanation
-        </Button>
-      )}
-      <Button
-        onClick={handleNext}
-        disabled={Boolean(!answers[currentQuestion] || savingResult)}
-        className={`w-full sm:w-fit text-sm sm:text-base cursor-pointer py-3 px-4 sm:px-6 ${
-          showExplanation ? 'sm:ml-auto' : ''
-        }`} // Full width on mobile
-      >
-        {savingResult ? (
-          <BarLoader className="w-full" color="hsl(var(--primary))" />
-        ) : (
-          currentQuestion < quizData.length - 1 ? "Next Question" : "Finish Quiz"
-        )}
-      </Button>
-    </CardFooter>
-  </Card>
-  );
-};
+          {question.options.map((option, index) => (
+            <div key={index} className="flex items-center space-x-2">
+              <RadioGroupItem value={option} id={`option-${index}`} />
+              <Label htmlFor={`option-${index}`}>{option}</Label>
+            </div>
+          ))}
+        </RadioGroup>
 
-export default Quiz;
+        {showExplanation && (
+          <div className="mt-4 p-4 bg-muted rounded-lg">
+            <p className="font-medium">Explanation:</p>
+            <p className="text-muted-foreground">{question.explanation}</p>
+          </div>
+        )}
+      </CardContent>
+      <CardFooter className="flex justify-between">
+        {!showExplanation && (
+          <Button
+            onClick={() => setShowExplanation(true)}
+            variant="outline"
+            disabled={!answers[currentQuestion]}
+          >
+            Show Explanation
+          </Button>
+        )}
+        <Button
+          onClick={handleNext}
+          disabled={!answers[currentQuestion] || savingResult}
+          className="ml-auto"
+        >
+          {savingResult && (
+            <BarLoader className="mt-4" width={"100%"} color="gray" />
+          )}
+          {currentQuestion < quizData.length - 1
+            ? "Next Question"
+            : "Finish Quiz"}
+        </Button>
+      </CardFooter>
+    </Card>
+  );
+}
