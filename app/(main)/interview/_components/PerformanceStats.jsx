@@ -33,7 +33,7 @@ export default function PerformanceChart({ assessments }) {
   }, [assessments]);
 
   return (
-    <Card>
+    <Card className='bg-transparent'>
       <CardHeader>
         <CardTitle className="gradient-title text-3xl md:text-4xl">
           Performance Trend
@@ -67,7 +67,7 @@ export default function PerformanceChart({ assessments }) {
               <Line
                 type="monotone"
                 dataKey="score"
-                stroke="hsl(var(--primary))"
+                stroke="#ffffff"
                 strokeWidth={2}
               />
             </LineChart>
